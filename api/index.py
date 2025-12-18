@@ -26,6 +26,15 @@ app = Flask(
 from nbno import Book
 
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Global exception handler to catch and log all errors."""
+    # Log the error internally but return a generic error message
+    return jsonify({
+        'error': 'An internal server error occurred'
+    }), 500
+
+
 @app.route('/', methods=['GET'])
 def index():
     """Main page - simplified for Vercel (no download functionality)."""
