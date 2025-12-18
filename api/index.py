@@ -206,9 +206,18 @@ def serve_logs(subpath):
 
 
 @app.route('/favicon.ico', methods=['GET'])
+def favicon_ico():
+    """Serve favicon.ico - uses PNG image with ICO-compatible mimetype."""
+    return send_from_directory(
+        os.path.join(ROOT_DIR, 'web', 'static', 'img'),
+        'logo.png',
+        mimetype='image/x-icon'
+    )
+
+
 @app.route('/favicon.png', methods=['GET'])
-def favicon():
-    """Serve favicon from static directory."""
+def favicon_png():
+    """Serve favicon.png from static directory."""
     return send_from_directory(
         os.path.join(ROOT_DIR, 'web', 'static', 'img'),
         'logo.png',
