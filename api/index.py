@@ -5,19 +5,20 @@ This wraps the Flask app for deployment on Vercel.
 """
 import sys
 import os
+import re
+
+import requests
+from flask import Flask, render_template, request, jsonify, Response, send_from_directory
 
 # Add the root directory to the path so we can import nbno module
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Set up the Flask app with correct paths for Vercel
-from flask import Flask, render_template, request, jsonify, Response, send_from_directory
-import re
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT_DIR)
 
 # Create Flask app with correct template and static paths
 app = Flask(
     __name__,
-    template_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'web', 'templates'),
-    static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'web', 'static'),
+    template_folder=os.path.join(ROOT_DIR, 'web', 'templates'),
+    static_folder=os.path.join(ROOT_DIR, 'web', 'static'),
     static_url_path='/static'
 )
 
@@ -162,8 +163,6 @@ def generate_citation_lokalhistorie(author, title, publisher, place, year, urn):
 @app.route('/preview', methods=['GET'])
 def preview():
     """Return metadata/thumbnails for a given media ID (used in queue preview)."""
-    import requests
-    
     media_id = request.args.get('id', '').strip()
     if not media_id:
         return jsonify({'error': 'Missing id parameter'}), 400
