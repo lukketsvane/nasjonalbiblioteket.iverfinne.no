@@ -16,6 +16,14 @@
       "dest": "/web/static/$1"
     },
     {
+      "src": "/favicon\\.ico",
+      "dest": "/web/static/img/logo.png"
+    },
+    {
+      "src": "/favicon\\.png",
+      "dest": "/web/static/img/logo.png"
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/index.py"
     }
