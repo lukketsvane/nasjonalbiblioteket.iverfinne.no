@@ -1,0 +1,10 @@
+services:
+  nbnopy:
+    container_name: nbno
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/data
+      - ./tessdata:/opt/tessdata
+    restart: unless-stopped
