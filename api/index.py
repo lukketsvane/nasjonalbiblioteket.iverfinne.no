@@ -6,6 +6,7 @@ This wraps the Flask app for deployment on Vercel.
 import sys
 import os
 import re
+import traceback
 
 import requests
 from flask import Flask, render_template, request, jsonify, Response, send_from_directory
@@ -26,10 +27,30 @@ app = Flask(
 from nbno import Book
 
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Global exception handler to catch and log all errors."""
+    error_traceback = traceback.format_exc()
+    return jsonify({
+        'error': str(e),
+        'type': type(e).__name__,
+        'traceback': error_traceback
+    }), 500
+
+
 @app.route('/', methods=['GET'])
 def index():
     """Main page - simplified for Vercel (no download functionality)."""
-    return render_template('index.html', books=[], ocrlangs=[])
+    try:
+        return render_template('index.html', books=[], ocrlangs=[])
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'type': type(e).__name__,
+            'template_folder': app.template_folder,
+            'static_folder': app.static_folder,
+            'root_dir': ROOT_DIR
+        }), 500
 
 
 @app.route('/citation', methods=['GET', 'POST'])
