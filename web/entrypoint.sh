@@ -29,7 +29,7 @@ fi
 
 # Point Tesseract at the effective dir only
 # (TESSDATA_PREFIX expects the *parent* of the tessdata folder)
-export TESSDATA_PREFIX="$EFFECTIVE_TESSDATA" #"${EFFECTIVE_PARENT}"
+export TESSDATA_PREFIX="${EFFECTIVE_PARENT}"
 
 # Helpful logs (once)
 if [ -n "${DEFAULT_SYS_TESSDATA}" ] && [ -d "${DEFAULT_SYS_TESSDATA}" ]; then

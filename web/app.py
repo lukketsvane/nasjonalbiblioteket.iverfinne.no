@@ -8,14 +8,15 @@ import json
 import os
 import queue
 import re
+import shutil
 import subprocess
 import threading
 from datetime import datetime
 
 import ocrmypdf
+import requests
 from flask import Flask, render_template, request, jsonify, Response, send_from_directory, send_file
 from nbno import Book
-import requests
 
 # ensure only one PDF/OCR job runs at a time
 pdf_lock = threading.Lock()
@@ -63,7 +64,6 @@ def index():
         display = name.replace('_', ' ')
         orig = name
         try:
-            import json
             with open(meta_file, encoding='utf-8') as mf:
                 meta = json.load(mf)
                 orig = meta.get('orig', orig)
@@ -306,7 +306,6 @@ def pages(dirname):
 
 @app.route('/delete/<bookname>', methods=['DELETE'])
 def delete_book(bookname):
-    import shutil
     download_dir = os.environ.get('DOWNLOAD_DIR', '.')
     folder = os.path.join(download_dir, bookname)
     try:
@@ -341,8 +340,6 @@ def preview():
     if 'C1' in book.page_url:
         c1_url = f"{book.page_url['C1']}/full/!200,200/0/native.jpg"
         try:
-            import requests
-
             resp = requests.head(c1_url, timeout=5)
             if resp.status_code == 200:
                 thumb = c1_url
@@ -412,7 +409,6 @@ def download():
         except Exception:
             pass
 
-    import builtins
     old_print = builtins.print
     builtins.print = hook_print
 
