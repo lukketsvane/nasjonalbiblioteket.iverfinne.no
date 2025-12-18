@@ -462,5 +462,133 @@ def download():
     return Response(generate(), mimetype='text/event-stream')
 
 
+@app.route('/citation', methods=['GET', 'POST'])
+def citation():
+    """Generate citations from nb.no URLs or media IDs."""
+    if request.method == 'GET':
+        return render_template('citation.html')
+    
+    # POST: process the URL/ID and return citation formats
+    url_or_id = request.json.get('url', '').strip()
+    if not url_or_id:
+        return jsonify({'error': 'Mangler URL eller ID'}), 400
+    
+    # Extract media ID from URL if needed
+    media_id = url_or_id
+    if 'nb.no/items/' in url_or_id:
+        # Extract ID from URL like https://www.nb.no/items/37d98942e04aa67503580d489b760ef5
+        match = re.search(r'/items/([a-f0-9]+)', url_or_id)
+        if match:
+            media_id = match.group(1)
+    elif url_or_id.startswith('URN:NBN:'):
+        # Handle URN format
+        media_id = url_or_id
+    
+    try:
+        # Fetch metadata using the Book class
+        book = Book(media_id)
+        
+        # Extract metadata fields
+        metadata_dict = {}
+        for item in book.raw_metadata:
+            label = item.get('label', '')
+            value = item.get('value', '')
+            metadata_dict[label] = value
+        
+        # Build citation data
+        title = metadata_dict.get('Tittel') or metadata_dict.get('Alternativ tittel') or book.title
+        author = metadata_dict.get('Forfatter', '')
+        year = metadata_dict.get('Publisert', '')
+        publisher = metadata_dict.get('Forlag', '')
+        place = metadata_dict.get('Utgivelsessted', '')
+        isbn = metadata_dict.get('ISBN', '')
+        
+        # Extract year from "Publisert" field (might contain full date or year)
+        year_match = re.search(r'\d{4}', year)
+        if year_match:
+            year = year_match.group(0)
+        
+        # Generate URN from the book's digimedie
+        urn = f"URN:NBN:no-nb_{book.media_type}_{book.media_id}"
+        urn_url = f"https://urn.nb.no/{urn}"
+        
+        # Generate different citation formats
+        citations = {
+            'bokmal': generate_citation_bokmal(author, year, title, isbn, place, publisher, urn_url),
+            'nynorsk': generate_citation_nynorsk(author, year, title, isbn, place, publisher, urn_url),
+            'lokalhistorie': generate_citation_lokalhistorie(author, title, publisher, place, year, urn),
+            'metadata': metadata_dict,
+            'urn': urn,
+            'urn_url': urn_url
+        }
+        
+        return jsonify(citations)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+def generate_citation_bokmal(author, year, title, isbn, place, publisher, urn_url):
+    """Generate Wikipedia Bokmål citation format."""
+    parts = ["{{ Kilde bok"]
+    if author:
+        parts.append(f" | forfatter = {author}")
+    if year:
+        parts.append(f" | utgivelsesår = {year}")
+    if title:
+        parts.append(f" | tittel = {title}")
+    if isbn:
+        parts.append(f" | isbn = {isbn}")
+    if place:
+        parts.append(f" | utgivelsessted = {place}")
+    if publisher:
+        parts.append(f" | forlag = {publisher}")
+    if urn_url:
+        parts.append(f" | url = {urn_url}")
+    parts.append(" | side = }}")
+    return "\n".join(parts)
+
+
+def generate_citation_nynorsk(author, year, title, isbn, place, publisher, urn_url):
+    """Generate Wikipedia Nynorsk citation format."""
+    parts = ["{{ Kjelde bok"]
+    if author:
+        parts.append(f" | forfattar = {author}")
+    if year:
+        parts.append(f" | utgjeve år = {year}")
+    if title:
+        parts.append(f" | tittel = {title}")
+    if isbn:
+        parts.append(f" | isbn = {isbn}")
+    if place:
+        parts.append(f" | stad = {place}")
+    if publisher:
+        parts.append(f" | forlag = {publisher}")
+    if urn_url:
+        parts.append(f" | url = {urn_url}")
+    parts.append(" | side = }}")
+    return "\n".join(parts)
+
+
+def generate_citation_lokalhistorie(author, title, publisher, place, year, urn):
+    """Generate Local History Wiki citation format."""
+    parts = []
+    if author:
+        parts.append(f"{author}.")
+    if title:
+        parts.append(f"''{title}''.")
+    if publisher:
+        parts.append(f"Utg. {publisher}.")
+    if place:
+        parts.append(f"{place}.")
+    if year:
+        parts.append(f"{year}.")
+    if urn:
+        # Extract just the NBN part
+        nbn = urn.replace('URN:NBN:no-nb_', 'NBN:no-nb_')
+        parts.append(f"{{{{{nbn}}}}}.")
+    return " ".join(parts)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, threaded=True)

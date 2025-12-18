@@ -42,6 +42,7 @@ logs/
 *.jpeg
 *.png
 !web/static/img/logo.png
+!web/static/icons/*.png
 !docs/screenshots/*.png
 
 # OS

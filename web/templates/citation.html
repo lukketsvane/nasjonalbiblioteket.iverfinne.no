@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NB Sitat">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <title>NB.no Sitatgenerator</title>
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  
+  <!-- iOS Icons -->
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-180.png') }}">
+  <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='icons/icon-152.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-180.png') }}">
+  <link rel="apple-touch-icon" sizes="167x167" href="{{ url_for('static', filename='icons/icon-167.png') }}">
+  
+  <!-- Splash screens for iOS -->
+  <link rel="apple-touch-startup-image" href="{{ url_for('static', filename='icons/splash.png') }}">
+  
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  
+  <style>
+    :root {
+      --primary: #c9a227;
+      --primary-dark: #a68521;
+      --bg-dark: #1a1a2e;
+      --bg-card: #16213e;
+      --bg-input: #0f1729;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b0;
+      --text-muted: #6c6c7c;
+      --border: #2a2a4a;
+      --success: #2ecc71;
+      --error: #e74c3c;
+      --radius: 16px;
+      --radius-sm: 12px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      padding-left: var(--safe-left);
+      padding-right: var(--safe-right);
+    }
+
+    /* Header with Dynamic Island consideration */
+    .header {
+      padding: 16px 20px;
+      background: linear-gradient(180deg, var(--bg-dark) 0%, transparent 100%);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 60px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(201, 162, 39, 0.1);
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:active {
+      transform: scale(0.96);
+      background: rgba(201, 162, 39, 0.2);
+    }
+
+    /* Main scrollable content */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 20px 100px;
+    }
+
+    /* Input section */
+    .input-section {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .input-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .input-hint {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      word-break: break-all;
+    }
+
+    .url-input-wrapper {
+      position: relative;
+    }
+
+    .url-input {
+      width: 100%;
+      padding: 16px 18px;
+      font-size: 16px; /* Prevents iOS zoom */
+      background: var(--bg-input);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .url-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .url-input:focus {
+      border-color: var(--primary);
+    }
+
+    .paste-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 8px 14px;
+      background: rgba(201, 162, 39, 0.15);
+      border: none;
+      border-radius: 8px;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .paste-btn:active {
+      transform: translateY(-50%) scale(0.95);
+      background: rgba(201, 162, 39, 0.25);
+    }
+
+    .generate-btn {
+      width: 100%;
+      padding: 18px;
+      margin-top: 16px;
+      background: var(--primary);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--bg-dark);
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .generate-btn:active {
+      transform: scale(0.98);
+      background: var(--primary-dark);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .generate-btn .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top-color: var(--bg-dark);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Error message */
+    .error-msg {
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid var(--error);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-top: 16px;
+      color: #ff6b6b;
+      font-size: 14px;
+      display: none;
+    }
+
+    .error-msg.show {
+      display: block;
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+
+    /* Results section */
+    .results-section {
+      display: none;
+    }
+
+    .results-section.show {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .citation-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .citation-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .citation-format {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(201, 162, 39, 0.1);
+      border: none;
+      border-radius: 8px;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:active {
+      transform: scale(0.95);
+    }
+
+    .copy-btn.copied {
+      background: rgba(46, 204, 113, 0.2);
+      color: var(--success);
+    }
+
+    .citation-content {
+      padding: 16px;
+      font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    /* Metadata table */
+    .metadata-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .metadata-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metadata-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .metadata-table td {
+      padding: 12px 16px;
+      font-size: 14px;
+    }
+
+    .metadata-table td:first-child {
+      font-weight: 600;
+      color: var(--text-secondary);
+      width: 35%;
+    }
+
+    .metadata-table td:last-child {
+      color: var(--text-primary);
+    }
+
+    /* Format selector tabs */
+    .format-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .format-tab {
+      flex-shrink: 0;
+      padding: 10px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .format-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--bg-dark);
+    }
+
+    .format-tab:active {
+      transform: scale(0.96);
+    }
+
+    /* Floating action to scroll top */
+    .scroll-top-btn {
+      position: fixed;
+      bottom: calc(24px + var(--safe-bottom));
+      right: 24px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: none;
+      color: var(--bg-dark);
+      font-size: 20px;
+      cursor: pointer;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.8);
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(201, 162, 39, 0.4);
+      z-index: 100;
+    }
+
+    .scroll-top-btn.show {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1);
+    }
+
+    .scroll-top-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Pull to refresh indicator */
+    .pull-indicator {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+      display: none;
+    }
+
+    /* Haptic feedback simulation */
+    @media (hover: none) and (pointer: coarse) {
+      .generate-btn:active,
+      .copy-btn:active,
+      .paste-btn:active,
+      .format-tab:active {
+        animation: haptic 0.1s ease;
+      }
+    }
+
+    @keyframes haptic {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(0.97); }
+    }
+
+    /* Landscape mode adjustments */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .header {
+        padding: 8px 20px;
+        min-height: 44px;
+      }
+      .header h1 {
+        font-size: 18px;
+      }
+      .input-section {
+        padding: 16px;
+      }
+    }
+
+    /* iPad/larger screens */
+    @media (min-width: 768px) {
+      .main-content {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <h1>
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="header-logo">
+        NB.no Sitat
+      </h1>
+      <a href="/" class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Tilbake
+      </a>
+    </header>
+
+    <main class="main-content" id="mainContent">
+      <section class="input-section">
+        <label class="input-label">Lim inn URL frå NB.no</label>
+        <p class="input-hint">nb.no/items/37d98942e... eller URN:NBN:...</p>
+        
+        <div class="url-input-wrapper">
+          <input 
+            type="url" 
+            id="urlInput" 
+            class="url-input" 
+            placeholder="https://www.nb.no/items/..."
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+          >
+          <button type="button" class="paste-btn" id="pasteBtn">Lim inn</button>
+        </div>
+
+        <button type="button" class="generate-btn" id="generateBtn">
+          <span class="btn-text">Generer sitat</span>
+        </button>
+
+        <div class="error-msg" id="errorMsg"></div>
+      </section>
+
+      <section class="results-section" id="resultsSection">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Vel format
+        </div>
+
+        <div class="format-tabs" id="formatTabs">
+          <button class="format-tab active" data-format="bokmal">Bokmål</button>
+          <button class="format-tab" data-format="nynorsk">Nynorsk</button>
+          <button class="format-tab" data-format="lokalhistorie">Lokalhistorie</button>
+          <button class="format-tab" data-format="metadata">Metadata</button>
+        </div>
+
+        <!-- Bokmål -->
+        <div class="citation-card" id="bokmalCard">
+          <div class="citation-header">
+            <span class="citation-format">Wikipedia Bokmål</span>
+            <button class="copy-btn" data-target="bokmalContent">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Kopier</span>
+            </button>
+          </div>
+          <div class="citation-content" id="bokmalContent"></div>
+        </div>
+
+        <!-- Nynorsk -->
+        <div class="citation-card" id="nynorskCard" style="display:none;">
+          <div class="citation-header">
+            <span class="citation-format">Wikipedia Nynorsk</span>
+            <button class="copy-btn" data-target="nynorskContent">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Kopier</span>
+            </button>
+          </div>
+          <div class="citation-content" id="nynorskContent"></div>
+        </div>
+
+        <!-- Lokalhistorie -->
+        <div class="citation-card" id="lokalhistorieCard" style="display:none;">
+          <div class="citation-header">
+            <span class="citation-format">Lokalhistoriewiki</span>
+            <button class="copy-btn" data-target="lokalhistorieContent">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Kopier</span>
+            </button>
+          </div>
+          <div class="citation-content" id="lokalhistorieContent"></div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="citation-card" id="metadataCard" style="display:none;">
+          <div class="citation-header">
+            <span class="citation-format">Metadata</span>
+          </div>
+          <table class="metadata-table" id="metadataTable">
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- URN Info -->
+        <div class="citation-card" id="urnCard">
+          <div class="citation-header">
+            <span class="citation-format">URN & Lenke</span>
+            <button class="copy-btn" data-target="urnContent">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Kopier</span>
+            </button>
+          </div>
+          <div class="citation-content" id="urnContent"></div>
+        </div>
+      </section>
+    </main>
+
+    <button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll til toppen">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 15l-6-6-6 6"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js')
+          .then(reg => console.log('SW registered'))
+          .catch(err => console.log('SW registration failed:', err));
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlInput = document.getElementById('urlInput');
+      const pasteBtn = document.getElementById('pasteBtn');
+      const generateBtn = document.getElementById('generateBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      const resultsSection = document.getElementById('resultsSection');
+      const formatTabs = document.getElementById('formatTabs');
+      const mainContent = document.getElementById('mainContent');
+      const scrollTopBtn = document.getElementById('scrollTopBtn');
+
+      const cards = {
+        bokmal: document.getElementById('bokmalCard'),
+        nynorsk: document.getElementById('nynorskCard'),
+        lokalhistorie: document.getElementById('lokalhistorieCard'),
+        metadata: document.getElementById('metadataCard')
+      };
+
+      let currentData = null;
+
+      // Paste from clipboard
+      pasteBtn.addEventListener('click', async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          urlInput.value = text;
+          urlInput.focus();
+          triggerHaptic();
+        } catch (err) {
+          // Fallback for iOS Safari
+          urlInput.focus();
+          document.execCommand('paste');
+        }
+      });
+
+      // Generate citation
+      generateBtn.addEventListener('click', generateCitation);
+      urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') generateCitation();
+      });
+
+      async function generateCitation() {
+        const url = urlInput.value.trim();
+        if (!url) {
+          showError('Skriv inn ein URL eller medie-ID');
+          return;
+        }
+
+        hideError();
+        setLoading(true);
+
+        try {
+          const response = await fetch('/citation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Noko gjekk gale');
+          }
+
+          currentData = data;
+          displayResults(data);
+          triggerHaptic();
+
+        } catch (error) {
+          showError(error.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      function displayResults(data) {
+        document.getElementById('bokmalContent').textContent = data.bokmal;
+        document.getElementById('nynorskContent').textContent = data.nynorsk;
+        document.getElementById('lokalhistorieContent').textContent = data.lokalhistorie;
+        document.getElementById('urnContent').textContent = `URN: ${data.urn}\nURL: ${data.urn_url}`;
+
+        // Metadata table
+        const tbody = document.querySelector('#metadataTable tbody');
+        tbody.innerHTML = '';
+        Object.entries(data.metadata).forEach(([key, value]) => {
+          if (value) {
+            const row = tbody.insertRow();
+            row.insertCell(0).textContent = key;
+            row.insertCell(1).textContent = value;
+          }
+        });
+
+        resultsSection.classList.add('show');
+        
+        // Scroll to results
+        setTimeout(() => {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+
+      function showError(message) {
+        errorMsg.textContent = message;
+        errorMsg.classList.add('show');
+        triggerHaptic();
+      }
+
+      function hideError() {
+        errorMsg.classList.remove('show');
+      }
+
+      function setLoading(loading) {
+        const btnText = generateBtn.querySelector('.btn-text');
+        if (loading) {
+          generateBtn.disabled = true;
+          btnText.innerHTML = '<span class="spinner"></span> Hentar...';
+        } else {
+          generateBtn.disabled = false;
+          btnText.textContent = 'Generer sitat';
+        }
+      }
+
+      // Format tabs
+      formatTabs.addEventListener('click', (e) => {
+        const tab = e.target.closest('.format-tab');
+        if (!tab) return;
+
+        const format = tab.dataset.format;
+        
+        // Update active tab
+        formatTabs.querySelectorAll('.format-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Show corresponding card
+        Object.entries(cards).forEach(([key, card]) => {
+          card.style.display = key === format ? 'block' : 'none';
+        });
+
+        triggerHaptic();
+      });
+
+      // Copy functionality
+      document.addEventListener('click', async (e) => {
+        const copyBtn = e.target.closest('.copy-btn');
+        if (!copyBtn) return;
+
+        const targetId = copyBtn.dataset.target;
+        const content = document.getElementById(targetId);
+        const text = content.textContent;
+
+        try {
+          await navigator.clipboard.writeText(text);
+          
+          const span = copyBtn.querySelector('span');
+          const originalText = span.textContent;
+          
+          copyBtn.classList.add('copied');
+          span.textContent = 'Kopiert!';
+          triggerHaptic();
+
+          setTimeout(() => {
+            copyBtn.classList.remove('copied');
+            span.textContent = originalText;
+          }, 2000);
+
+        } catch (err) {
+          // Fallback
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
+      });
+
+      // Scroll to top button
+      mainContent.addEventListener('scroll', () => {
+        if (mainContent.scrollTop > 300) {
+          scrollTopBtn.classList.add('show');
+        } else {
+          scrollTopBtn.classList.remove('show');
+        }
+      });
+
+      scrollTopBtn.addEventListener('click', () => {
+        mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+        triggerHaptic();
+      });
+
+      // Haptic feedback (iOS)
+      function triggerHaptic() {
+        if ('vibrate' in navigator) {
+          navigator.vibrate(10);
+        }
+      }
+
+      // Handle iOS keyboard
+      urlInput.addEventListener('focus', () => {
+        setTimeout(() => {
+          urlInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      });
+    });
+  </script>
+</body>
+</html>
