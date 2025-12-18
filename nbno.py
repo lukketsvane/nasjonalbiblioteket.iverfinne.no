@@ -148,8 +148,7 @@ class Book:
 
     def get_manifest(self):
         manifest_url = (
-            f"{self.api_url}_{
-                self.media_type}"
+            f"{self.api_url}_{self.media_type}"
             f"_{self.media_id}/manifest"
         )
         try:
@@ -311,8 +310,7 @@ class Book:
                         progress += 1
                         if not self.verbose:
                             print(
-                                f"{' ' *
-                                    5}Lagrer side {progress} av {len(imagelist)}.",
+                                f"{' ' * 5}Lagrer side {progress} av {len(imagelist)}.",
                                 end="\r",
                             )
             if self.verbose:
@@ -401,14 +399,12 @@ class Book:
             else:
                 if page_number in ["I3", "I1", "C3", "C2", "C1"]:
                     print(
-                        f"Feilet å laste ned side {
-                            page_number}.jpg - hopper over."
+                        f"Feilet å laste ned side {page_number}.jpg - hopper over."
                     )
                     return True, 200
                 else:
                     print(
-                        f"Feilet å laste ned side {
-                            page_number}.jpg - prøver igjen."
+                        f"Feilet å laste ned side {page_number}.jpg - prøver igjen."
                     )
                     return self.download_page(page_number)
 
@@ -612,8 +608,7 @@ def main():
             if int(args.stop) > book.num_pages:
                 print("Du har forsøkt å laste ned flere sider enn det eksisterer.")
                 print(
-                    f"Det finnes kun {
-                        book.num_pages} sider, du får ikke flere enn dette."
+                    f"Det finnes kun {book.num_pages} sider, du får ikke flere enn dette."
                 )
         print(f"Laster ned {book.media_type} med ID: {book.media_id}.")
         if args.cover:
