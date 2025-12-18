@@ -205,5 +205,25 @@ def serve_logs(subpath):
     return ('', 200, {'Content-Type': 'text/plain'})
 
 
+@app.route('/favicon.ico', methods=['GET'])
+def favicon_ico():
+    """Serve favicon.ico - uses PNG image with ICO-compatible mimetype."""
+    return send_from_directory(
+        os.path.join(ROOT_DIR, 'web', 'static', 'img'),
+        'logo.png',
+        mimetype='image/x-icon'
+    )
+
+
+@app.route('/favicon.png', methods=['GET'])
+def favicon_png():
+    """Serve favicon.png from static directory."""
+    return send_from_directory(
+        os.path.join(ROOT_DIR, 'web', 'static', 'img'),
+        'logo.png',
+        mimetype='image/png'
+    )
+
+
 # For Vercel serverless functions
 handler = app
